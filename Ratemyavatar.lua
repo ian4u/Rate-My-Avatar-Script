@@ -1,19 +1,68 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Rate My Avatar v0.1", "DarkTheme")
+local Window = Library.CreateLib("Rate My Avatar v0.1 | By IAN", "DarkTheme")
 
 
 -- Main script
-local Tools_M = Window:NewTab("Tools By Ian")
+local Tools_M = Window:NewTab("Tools")
 local tools = Tools_M:NewSection("Tools")
+
 local Tp_M = Window:NewTab("Teleports")
 local tp = Tp_M:NewSection("Locations")
-local Loads_M = Window:NewTab("Loads")
+
+local Booth_M = Window:NewTab("Booth's")
+local Booth = Booth_M:NewSection("Booth's")
+
+local Loads_M = Window:NewTab("Load's")
 local loads = Loads_M:NewSection("Load's")
+
 local Misc = Window:NewTab("Misc")
 local misc = Misc:NewSection("Settings")
 
+
+-- misc
 misc:NewKeybind("UI Key: RightControl", "Toggels ui", Enum.KeyCode.RightControl, function()
 	Library:ToggleUI()
+end)
+
+misc:NewToggle("server chrasher use with aouto get sword", "", function(state)
+    local num = 0
+    while state do
+        if game.Players.LocalPlayer:WaitForChild("Backpack"):FindFirstChild("ClassicSword") then
+            print('YOU DUPED '+num+' SWORDS')
+            game.Players.LocalPlayer.Backpack:FindFirstChildOfClass("Tool").Parent = game.Players.LocalPlayer.Character
+            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool").Parent = game.Workspace
+            wait(0.0)
+        end
+        wait(0.0)
+    end
+end)
+
+--Booth's
+Booth:NewToggle("Loop Update","",function(state)
+    if state then
+        Update_Bouth("HELLO",0)
+        wait(0.5)
+        Update_Bouth("MY",0)
+        wait(0.5)
+        Update_Bouth("FRIEND'S",0)
+    else
+        --nothing
+    end
+end)
+
+Booth:NewButton("Blacklist all","",function()
+    for i,v in pairs(game.Players:GetChildren()) do
+        if v.Name == game:GetService("Players").LocalPlayer.Name then
+            print("You have been passed")
+        else
+            local args = {
+                [1] = "AddBlacklist",
+                [2] = v.Name
+            }
+            game:GetService("ReplicatedStorage").CustomiseBooth:FireServer(unpack(args))
+        end
+    end
+    Update_Bouth("You can't stand here",6403436082)
 end)
 
 
@@ -89,7 +138,7 @@ tools:NewToggle("Loopgive sword", "Gives a sword (need to be knight)", function(
     if state then
         while toggel do
             get_sord()
-            wait(1)
+            wait(0.0)
         end
     else
         --nothing
@@ -98,15 +147,24 @@ end)
 
 -- Tp's
 tp:NewButton("Tp to crown", "", function()
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(246,4,-242)
+    tp_to(-243, 4, -245)
 end)
-
+tp:NewButton("Tp to club", "", function()
+    tp_to(-5899,-54,22)
+end)
+tp:NewButton("Serverhop", "Hops to another server", function()
+    Teleport()
+end)
+-- Id's 7637674803,11215015041,6403436082
 
 
 
 
 
 -- Functions
+function tp_to(c1,c2,c3)
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(c1,c2,c3)
+end
 function get_sord()
 	local args = {
     	[1] = "ClassicSword"
@@ -118,4 +176,74 @@ function get_item_by_id(id)
         [1] = id
     }
     game:GetService("ReplicatedStorage").RequestGamepassTool:FireServer(unpack(args))
+end
+function Update_Bouth(Text,Immageid)
+    local args = {
+        [1] = "Update",
+        [2] = {
+            ["DescriptionText"] = Text,
+            ["ImageId"] = Immageid
+        }
+    }
+    game:GetService("ReplicatedStorage").CustomiseBooth:FireServer(unpack(args))
+end
+
+local PlaceID = game.PlaceId
+local AllIDs = {}
+local foundAnything = ""
+local actualHour = os.date("!*t").hour
+function TPReturner()
+   local Site;
+   if foundAnything == "" then
+       Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+   else
+       Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+   end
+   local ID = ""
+   if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+       foundAnything = Site.nextPageCursor
+   end
+   local num = 0;
+   for i,v in pairs(Site.data) do
+       local Possible = true
+       ID = tostring(v.id)
+       if tonumber(v.maxPlayers) > tonumber(v.playing) then
+           for _,Existing in pairs(AllIDs) do
+               if num ~= 0 then
+                   if ID == tostring(Existing) then
+                       Possible = false
+                   end
+               else
+                   if tonumber(actualHour) ~= tonumber(Existing) then
+                       local delFile = pcall(function()
+                           delfile("NotSameServers.json")
+                           AllIDs = {}
+                           table.insert(AllIDs, actualHour)
+                       end)
+                   end
+               end
+               num = num + 1
+           end
+           if Possible == true then
+               table.insert(AllIDs, ID)
+               wait()
+               pcall(function()
+                   writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+                   wait()
+                   game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
+               end)
+               wait(4)
+           end
+       end
+   end
+end
+function Teleport()
+   while wait() do
+       pcall(function()
+           TPReturner()
+           if foundAnything ~= "" then
+               TPReturner()
+           end
+       end)
+   end
 end
